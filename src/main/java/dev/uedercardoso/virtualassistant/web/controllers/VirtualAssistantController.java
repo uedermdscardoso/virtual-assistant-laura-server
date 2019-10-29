@@ -1,18 +1,17 @@
 package dev.uedercardoso.virtualassistant.web.controllers;
 
-import java.util.Calendar;
-
-import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ibm.watson.assistant.v2.model.MessageResponse;
+import com.ibm.watson.text_to_speech.v1.model.Pronunciation;
 
 import dev.uedercardoso.virtualassistant.config.AssistantConfig;
 import dev.uedercardoso.virtualassistant.models.VirtualAssistant;
@@ -29,7 +28,7 @@ public class VirtualAssistantController {
 	//Using Assistent V2 - Watson Assistant / IBM
 	@CrossOrigin(origins = "http://localhost:4200")
 	@RequestMapping(method=RequestMethod.POST, produces=MediaType.APPLICATION_JSON_UTF8_VALUE)
-	public ResponseEntity<String> getResponseFromVirtualAssistant(@RequestBody String message){
+	public ResponseEntity<String> getResponse(@RequestBody String message){
 		
 		try {
 			
@@ -38,6 +37,35 @@ public class VirtualAssistantController {
 			MessageResponse response = this.assistantService.getData(laura);
 			
 			return ResponseEntity.ok(response.toString());
+			
+		} catch(Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.badRequest().build();
+		}
+	}
+	
+	https://cloud.ibm.com/apidocs/text-to-speech/text-to-speech?code=java
+	@PostMapping("/audio")
+	public ResponseEntity<Void> saveAudio(){
+		try {
+			
+			this.assistantService.saveAudio();
+			
+			return ResponseEntity.ok().build();
+			
+		} catch(Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.badRequest().build();
+		}
+	}
+	
+	@PostMapping("/pronnunciation")
+	public ResponseEntity<String> pronnunciation(){
+		try {
+			
+			Pronunciation pronnunciation = this.assistantService.pronnunciation();
+			
+			return ResponseEntity.ok(pronnunciation.getPronunciation());
 			
 		} catch(Exception e) {
 			e.printStackTrace();
