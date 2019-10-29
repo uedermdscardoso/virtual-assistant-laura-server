@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Implementation-Title: Assistente Virtual Laura
+Implementation-Version: 0.0.1-SNAPSHOT
+Built-By: User
+Implementation-Vendor-Id: dev.uedercardoso.virtualassistant
+Build-Jdk: 1.8.0_91
+Implementation-URL: https://projects.spring.io/spring-boot/#/spring-bo
+ ot-starter-parent/virtual-assistant-laura-server
+Created-By: Maven Integration for Eclipse
+Main-Class: dev.uedercardoso.virtualassistant.VirtualAssistantWebAppli
+ cation
+
