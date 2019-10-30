@@ -79,6 +79,18 @@ public class VirtualAssistantController {
 			return ResponseEntity.badRequest().build();
 		}
 	}
+	
+	//https://cloud.ibm.com/apidocs/speech-to-text/speech-to-text?code=java
+	@PostMapping("/teste")
+	public ResponseEntity<String> convertSpeechToText(){
+		try {
+			String teste = this.assistantService.convertSpeechToText();
+			return ResponseEntity.ok(teste);
+		} catch(Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.badRequest().build();
+		}
+	}
 		
 }
 

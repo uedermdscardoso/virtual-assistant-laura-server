@@ -1,5 +1,7 @@
 package dev.uedercardoso.virtualassistant.web.services;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -22,6 +24,8 @@ import com.ibm.watson.assistant.v2.model.MessageInput;
 import com.ibm.watson.assistant.v2.model.MessageOptions;
 import com.ibm.watson.assistant.v2.model.MessageResponse;
 import com.ibm.watson.assistant.v2.model.SessionResponse;
+import com.ibm.watson.speech_to_text.v1.SpeechToText;
+import com.ibm.watson.speech_to_text.v1.model.AddAudioOptions;
 import com.ibm.watson.text_to_speech.v1.TextToSpeech;
 import com.ibm.watson.text_to_speech.v1.model.SynthesizeOptions;
 import com.ibm.watson.text_to_speech.v1.util.WaveUtils;
@@ -54,6 +58,34 @@ public class AssistantService {
 		MessageResponse response = service.message(options).execute().getResult();
 		
 		return response;
+	}
+	
+	public String convertSpeechToText() {
+		
+		String apiKey = "LmuHvOjQHLt1DYkI9KJToMYlExQphiZmDk9khwJucdJW";
+		String serviceUrl = "https://stream.watsonplatform.net/speech-to-text/api";
+		
+		IamAuthenticator authenticator = new IamAuthenticator(apiKey);
+		SpeechToText speechToText = new SpeechToText(authenticator);
+		speechToText.setServiceUrl(serviceUrl);
+
+		try {
+		  AddAudioOptions addAudioOptions = new AddAudioOptions.Builder()
+		    .customizationId("{customizationId}")
+		    .contentType("audio/wav")
+		    .audioResource(new File("C:/Users/User/Desktop/hello_world.wav"))
+		    .audioName("hello_world")
+		    .build();
+
+		  return speechToText.addAudio(addAudioOptions).execute().getResult().toString();
+		  
+		  // Poll for audio status.
+		} catch (FileNotFoundException e) {
+		  e.printStackTrace();
+		}
+		
+		return "";
+		
 	}
 	
 	public void sendSounds(String message) {
