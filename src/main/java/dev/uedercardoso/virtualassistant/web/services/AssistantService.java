@@ -1,10 +1,18 @@
 package dev.uedercardoso.virtualassistant.web.services;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.UnsupportedAudioFileException;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
 import com.ibm.cloud.sdk.core.security.IamAuthenticator;
@@ -15,8 +23,6 @@ import com.ibm.watson.assistant.v2.model.MessageOptions;
 import com.ibm.watson.assistant.v2.model.MessageResponse;
 import com.ibm.watson.assistant.v2.model.SessionResponse;
 import com.ibm.watson.text_to_speech.v1.TextToSpeech;
-import com.ibm.watson.text_to_speech.v1.model.GetPronunciationOptions;
-import com.ibm.watson.text_to_speech.v1.model.Pronunciation;
 import com.ibm.watson.text_to_speech.v1.model.SynthesizeOptions;
 import com.ibm.watson.text_to_speech.v1.util.WaveUtils;
 
@@ -50,60 +56,80 @@ public class AssistantService {
 		return response;
 	}
 	
-	public Pronunciation pronnunciation() {
-		String apikey = "lJPNgGUkjAThvUh8yUaSggD5s6wkarXK_aUkkacYKUut";
+	public void sendSounds(String message) {
+		
+		String apiKey = "lJPNgGUkjAThvUh8yUaSggD5s6wkarXK_aUkkacYKUut";
 		String serviceUrl = "https://stream.watsonplatform.net/text-to-speech/api";
 		
-		IamAuthenticator authenticator = new IamAuthenticator(apikey);
-		TextToSpeech textToSpeech = new TextToSpeech(authenticator);
-		textToSpeech.setServiceUrl(serviceUrl);
-
-		GetPronunciationOptions getPronunciationOptions =
-		  new GetPronunciationOptions.Builder()
-		    .text("Hello, I am Alice")
-		    .format("ibm")
-		    .voice("en-US_AllisonVoice")
-		    .build();
-
-		Pronunciation pronunciation =
-		  textToSpeech.getPronunciation(getPronunciationOptions).execute().getResult();
-		
-		return pronunciation;
-	}
-	
-	public void saveAudio() {
-		String apikey = "lJPNgGUkjAThvUh8yUaSggD5s6wkarXK_aUkkacYKUut";
-		String serviceUrl = "https://stream.watsonplatform.net/text-to-speech/api";
-		
-		IamAuthenticator authenticator = new IamAuthenticator(apikey);
+		IamAuthenticator authenticator = new IamAuthenticator(apiKey);
 		TextToSpeech textToSpeech = new TextToSpeech(authenticator);
 		textToSpeech.setServiceUrl(serviceUrl);
 
 		try {
 		  SynthesizeOptions synthesizeOptions =
 		    new SynthesizeOptions.Builder()
-		      .text("Hello world, I am Alice")
+		      .text(message)
 		      .accept("audio/wav")
-		      .voice("en-US_AllisonVoice")
+		      .voice("pt-BR_IsabelaVoice")
 		      .build();
 
-		  InputStream inputStream =
-		    textToSpeech.synthesize(synthesizeOptions).execute().getResult();
+		  InputStream inputStream = textToSpeech.synthesize(synthesizeOptions).execute().getResult();
 		  InputStream in = WaveUtils.reWriteWaveHeader(inputStream);
 
-		  OutputStream out = new FileOutputStream("C:/Users/User/Desktop/hello_world.wav");
-		  byte[] buffer = new byte[1024];
-		  int length;
-		  while ((length = in.read(buffer)) > 0) {
-		    out.write(buffer, 0, length);
-		  }
+//		  File audio = File.createTempFile("allison", ".wav");
+//		  audio.deleteOnExit();
+//		  FileOutputStream out = new FileOutputStream(audio);
+//		  IOUtils.copy(in, out);
 
-		  out.close();
+		  //Execute audio
+		  AudioInputStream stream;
+		  AudioFormat format;
+		  DataLine.Info info;
+		  Clip clip;
+
+		  stream = AudioSystem.getAudioInputStream(in); //Or File ou InputStream
+		  format = stream.getFormat();
+		  info = new DataLine.Info(Clip.class, format);
+		  clip = (Clip) AudioSystem.getLine(info);
+		  clip.open(stream);
+		  clip.start();
+		  
 		  in.close();
 		  inputStream.close();
-		} catch (IOException e) {
+		 
+		} catch (IOException | UnsupportedAudioFileException | LineUnavailableException e) {
 		  e.printStackTrace();
 		}
 	}
 	
+	public String getTextAndLoadSounds(VirtualAssistant laura, Boolean isTalk) throws Exception {
+		
+		//Using Watson Assistant
+		MessageResponse response = getData(laura);
+		
+		JSONObject output = new JSONObject(response.toString());
+		String msgResponse = "";
+		
+		if(output.has("output")) {
+			output = output.getJSONObject("output");
+			if(output.has("generic")) {
+				JSONArray generic = output.getJSONArray("generic"); 
+				
+				if(!generic.isEmpty()) {
+					JSONObject text = generic.getJSONObject(0);
+					if(text.has("text")) {
+						msgResponse = text.getString("text");
+						
+						if(isTalk)
+							this.sendSounds(msgResponse);
+						
+						return msgResponse;
+					}
+				}
+			}
+		}
+		
+		throw new Exception("Não foi possível retornar o texto e os sons");
+		
+	}
 }

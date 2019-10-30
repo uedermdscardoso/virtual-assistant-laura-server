@@ -8,10 +8,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ibm.watson.assistant.v2.model.MessageResponse;
-import com.ibm.watson.text_to_speech.v1.model.Pronunciation;
 
 import dev.uedercardoso.virtualassistant.config.AssistantConfig;
 import dev.uedercardoso.virtualassistant.models.VirtualAssistant;
@@ -26,7 +26,6 @@ public class VirtualAssistantController {
 	
 	//https://cloud.ibm.com/apidocs/assistant/assistant-v2?code=java
 	//Using Assistent V2 - Watson Assistant / IBM
-	@CrossOrigin(origins = "http://localhost:4200")
 	@RequestMapping(method=RequestMethod.POST, produces=MediaType.APPLICATION_JSON_UTF8_VALUE)
 	public ResponseEntity<String> getResponse(@RequestBody String message){
 		
@@ -34,6 +33,7 @@ public class VirtualAssistantController {
 			
 			VirtualAssistant laura = new VirtualAssistant("Laura",AssistantConfig.API_KEY, AssistantConfig.ASSISTANT_ID, message,  AssistantConfig.TODAY, AssistantConfig.SERVICE_URL);
 			
+			//Using Watson Assistant
 			MessageResponse response = this.assistantService.getData(laura);
 			
 			return ResponseEntity.ok(response.toString());
@@ -44,12 +44,13 @@ public class VirtualAssistantController {
 		}
 	}
 	
-	https://cloud.ibm.com/apidocs/text-to-speech/text-to-speech?code=java
+	//https://cloud.ibm.com/apidocs/text-to-speech/text-to-speech?code=java
 	@PostMapping("/audio")
-	public ResponseEntity<Void> saveAudio(){
+	public ResponseEntity<Void> sendSounds(@RequestBody String message){
 		try {
 			
-			this.assistantService.saveAudio();
+			//Using text to speech api (Watson)			
+			this.assistantService.sendSounds(message);
 			
 			return ResponseEntity.ok().build();
 			
@@ -59,20 +60,26 @@ public class VirtualAssistantController {
 		}
 	}
 	
-	@PostMapping("/pronnunciation")
-	public ResponseEntity<String> pronnunciation(){
+	@CrossOrigin(origins = "http://localhost:4200")
+	@PostMapping("/conversation")
+	public ResponseEntity<String> getTextAndSounds(
+			@RequestParam(required=true) String message, 
+			@RequestParam(required=true) Boolean isTalk) {
 		try {
 			
-			Pronunciation pronnunciation = this.assistantService.pronnunciation();
+			VirtualAssistant laura = new VirtualAssistant("Laura",AssistantConfig.API_KEY, AssistantConfig.ASSISTANT_ID, message,  AssistantConfig.TODAY, AssistantConfig.SERVICE_URL);
 			
-			return ResponseEntity.ok(pronnunciation.getPronunciation());
+			//Using Watson Assistant
+			String response = this.assistantService.getTextAndLoadSounds(laura,isTalk);
+			
+			return ResponseEntity.ok(response); //Resposta do assistente
 			
 		} catch(Exception e) {
 			e.printStackTrace();
 			return ResponseEntity.badRequest().build();
 		}
 	}
-	
+		
 }
 
 
