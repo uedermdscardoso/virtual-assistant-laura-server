@@ -26,6 +26,8 @@ import com.ibm.watson.assistant.v2.model.MessageResponse;
 import com.ibm.watson.assistant.v2.model.SessionResponse;
 import com.ibm.watson.speech_to_text.v1.SpeechToText;
 import com.ibm.watson.speech_to_text.v1.model.AddAudioOptions;
+import com.ibm.watson.speech_to_text.v1.model.CreateLanguageModelOptions;
+import com.ibm.watson.speech_to_text.v1.model.LanguageModel;
 import com.ibm.watson.text_to_speech.v1.TextToSpeech;
 import com.ibm.watson.text_to_speech.v1.model.SynthesizeOptions;
 import com.ibm.watson.text_to_speech.v1.util.WaveUtils;
@@ -36,7 +38,7 @@ import dev.uedercardoso.virtualassistant.models.VirtualAssistant;
 public class AssistantService {
 
 	//Using Assistant v2
-	public MessageResponse getData(VirtualAssistant virtualAssistant) {
+	public MessageResponse getRobotText(VirtualAssistant virtualAssistant) {
 		
 		IamAuthenticator authenticator = new IamAuthenticator(virtualAssistant.getApiKey());
 		Assistant service = new Assistant(virtualAssistant.getDate(), authenticator);
@@ -60,35 +62,7 @@ public class AssistantService {
 		return response;
 	}
 	
-	public String convertSpeechToText() {
-		
-		String apiKey = "LmuHvOjQHLt1DYkI9KJToMYlExQphiZmDk9khwJucdJW";
-		String serviceUrl = "https://stream.watsonplatform.net/speech-to-text/api";
-		
-		IamAuthenticator authenticator = new IamAuthenticator(apiKey);
-		SpeechToText speechToText = new SpeechToText(authenticator);
-		speechToText.setServiceUrl(serviceUrl);
-
-		try {
-		  AddAudioOptions addAudioOptions = new AddAudioOptions.Builder()
-		    .customizationId("{customizationId}")
-		    .contentType("audio/wav")
-		    .audioResource(new File("C:/Users/User/Desktop/hello_world.wav"))
-		    .audioName("hello_world")
-		    .build();
-
-		  return speechToText.addAudio(addAudioOptions).execute().getResult().toString();
-		  
-		  // Poll for audio status.
-		} catch (FileNotFoundException e) {
-		  e.printStackTrace();
-		}
-		
-		return "";
-		
-	}
-	
-	public void sendSounds(String message) {
+	public void executeAudio(String message) {
 		
 		String apiKey = "lJPNgGUkjAThvUh8yUaSggD5s6wkarXK_aUkkacYKUut";
 		String serviceUrl = "https://stream.watsonplatform.net/text-to-speech/api";
@@ -134,13 +108,9 @@ public class AssistantService {
 		}
 	}
 	
-	public String getTextAndLoadSounds(VirtualAssistant laura, Boolean isTalk) throws Exception {
+	public String getText(String response) throws Exception {
 		
-		//Using Watson Assistant
-		MessageResponse response = getData(laura);
-		
-		JSONObject output = new JSONObject(response.toString());
-		String msgResponse = "";
+		JSONObject output = new JSONObject(response);
 		
 		if(output.has("output")) {
 			output = output.getJSONObject("output");
@@ -150,18 +120,57 @@ public class AssistantService {
 				if(!generic.isEmpty()) {
 					JSONObject text = generic.getJSONObject(0);
 					if(text.has("text")) {
-						msgResponse = text.getString("text");
 						
-						if(isTalk)
-							this.sendSounds(msgResponse);
+						return text.getString("text");
 						
-						return msgResponse;
 					}
 				}
 			}
 		}
 		
-		throw new Exception("Não foi possível retornar o texto e os sons");
+		throw new Exception("Não foi possível retornar o texto");
 		
 	}
+	
+	
+	public String convertSpeechToText() {
+		
+		String apiKey = "LmuHvOjQHLt1DYkI9KJToMYlExQphiZmDk9khwJucdJW";
+		String serviceUrl = "https://stream.watsonplatform.net/speech-to-text/api";
+		
+		IamAuthenticator authenticator = new IamAuthenticator(apiKey);
+		SpeechToText speechToText = new SpeechToText(authenticator);
+		speechToText.setServiceUrl(serviceUrl);
+
+		CreateLanguageModelOptions createLanguageModelOptions =
+		  new CreateLanguageModelOptions.Builder()
+		    .name("First example language model")
+		    .baseModelName("en-US_BroadbandModel")
+		    .description("First custom language model example")
+		    .build();
+
+		LanguageModel languageModel =
+		  speechToText.createLanguageModel(createLanguageModelOptions).execute().getResult();
+		
+		String customizationId = languageModel.getCustomizationId();
+		
+		try {
+		  AddAudioOptions addAudioOptions = new AddAudioOptions.Builder()
+		    .customizationId(customizationId)
+		    .contentType("audio/wav")
+		    .audioResource(new File("C:/Users/User/Desktop/hello_world.wav"))
+		    .audioName("hello_world")
+		    .build();
+
+		  return speechToText.addAudio(addAudioOptions).execute().getResult().toString();
+		  
+		  // Poll for audio status.
+		} catch (FileNotFoundException e) {
+		  e.printStackTrace();
+		}
+		
+		return "";
+		
+	}
+	
 }
