@@ -4,6 +4,7 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -35,20 +36,17 @@ public class VirtualAssistantController {
 			//Using Watson Assistant
 			MessageResponse response = this.assistantService.getRobotText(laura);
 			
-			String robotText = this.assistantService.getText(response.toString());
-						
+			String robotText = this.assistantService.getText(response.toString());	
+			JSONObject result = new JSONObject();
+			result.put("text", robotText);
+			
 			if(isAudio) {
-				
 				this.assistantService.executeAudio(robotText);
 				
-				return ResponseEntity.ok().build();
-				
-			} else {
-				JSONObject result = new JSONObject();
-				result.put("text", robotText);
-				
+				return ResponseEntity.ok(result.toString());	
+			} else
 				return ResponseEntity.ok(result.toString());
-			}
+			
 		} catch(Exception e) {
 			return ResponseEntity.badRequest().build();
 		}
